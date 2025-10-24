@@ -144,83 +144,118 @@ const QUIZ_QUESTIONS = [
     }
 ];
 
-// Wait for page to load completely
+// SIMPLE INITIALIZATION THAT DEFINITELY WORKS
 document.addEventListener('DOMContentLoaded', function() {
-    console.log("🚀 Page loaded, initializing quiz...");
-    setTimeout(init, 100);
+    console.log('📱 Page loaded!');
+    initializeQuiz();
 });
 
-function init() {
-    console.log("🎯 Initializing quiz...");
+function initializeQuiz() {
+    console.log('🎯 Initializing quiz...');
     
+    // Load saved players
     loadPlayers();
     updatePlayerDisplay();
     
+    // Get buttons and inputs
     const joinBtn = document.getElementById('joinBtn');
     const usernameInput = document.getElementById('usernameInput');
     const playAgainBtn = document.getElementById('playAgainBtn');
     
-    console.log("Join button:", joinBtn);
-    console.log("Username input:", usernameInput);
+    console.log('Join button found:', !!joinBtn);
+    console.log('Username input found:', !!usernameInput);
     
+    // Add click event to join button
     if (joinBtn) {
-        joinBtn.addEventListener('click', validateAndStart);
-        console.log("✅ Join button event listener added");
-    } else {
-        console.error("❌ Join button not found!");
+        joinBtn.onclick = function() {
+            console.log('👉 Join button clicked!');
+            handleStartQuiz();
+        };
     }
     
+    // Add enter key support
     if (usernameInput) {
-        usernameInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') validateAndStart();
-        });
+        usernameInput.onkeypress = function(e) {
+            if (e.key === 'Enter') {
+                handleStartQuiz();
+            }
+        };
     }
     
+    // Play again button
     if (playAgainBtn) {
-        playAgainBtn.addEventListener('click', playAgain);
+        playAgainBtn.onclick = function() {
+            showScreen('username');
+            const usernameInput = document.getElementById('usernameInput');
+            if (usernameInput) {
+                usernameInput.value = '';
+                usernameInput.focus();
+            }
+        };
     }
     
+    // Start reset timer display
     startResetTimer();
+    
+    console.log('✅ Quiz initialized!');
 }
 
-function validateAndStart() {
-    console.log("🎯 Start button CLICKED!");
+function handleStartQuiz() {
+    console.log('🎯 Handling start quiz...');
     
     const usernameInput = document.getElementById('usernameInput');
     const usernameError = document.getElementById('usernameError');
     
     if (!usernameInput) {
-        console.error("❌ Username input not found!");
+        console.error('❌ Username input not found!');
         return;
     }
     
     const username = usernameInput.value.trim();
+    console.log('Username entered:', username);
     
+    // Validation
     if (!username) {
-        if (usernameError) usernameError.textContent = 'Please enter a username!';
+        if (usernameError) {
+            usernameError.textContent = 'Please enter a username!';
+            usernameError.style.color = '#ff6b6b';
+        }
         return;
     }
     
     if (username.length < 3) {
-        if (usernameError) usernameError.textContent = 'Username must be at least 3 characters!';
+        if (usernameError) {
+            usernameError.textContent = 'Username must be at least 3 characters!';
+            usernameError.style.color = '#ff6b6b';
+        }
         return;
     }
     
+    // Clean up old players
     cleanupOldPlayers();
     
+    // Check if username exists
     if (gameState.players.has(username)) {
-        if (usernameError) usernameError.textContent = 'Username used recently. Try after 2 hours.';
+        if (usernameError) {
+            usernameError.textContent = 'Username used recently. Try after 2 hours.';
+            usernameError.style.color = '#ff6b6b';
+        }
         return;
     }
     
-    if (usernameError) usernameError.textContent = '';
+    // Clear error
+    if (usernameError) {
+        usernameError.textContent = '';
+    }
     
+    // START THE QUIZ
     startQuiz(username);
 }
 
 function startQuiz(username) {
-    console.log("🚀 STARTING QUIZ FOR:", username);
+    console.log('🚀 Starting quiz for:', username);
     
+    // Add player
     gameState.players.set(username, {
         username: username,
         score: 0,
@@ -230,40 +265,45 @@ function startQuiz(username) {
     savePlayers();
     updatePlayerDisplay();
     
+    // Set current player
     gameState.currentPlayer = username;
     gameState.score = 0;
     gameState.currentQuestion = 0;
     
+    // Update UI
     const quizUsername = document.getElementById('quizUsername');
     const currentScore = document.getElementById('currentScore');
     
     if (quizUsername) quizUsername.textContent = username;
     if (currentScore) currentScore.textContent = '0';
     
+    // Show quiz screen
     showScreen('quiz');
+    
+    // Load first question
     loadQuestion();
 }
 
 function showScreen(screenName) {
-    console.log("🔄 Showing screen:", screenName);
+    console.log('🔄 Showing screen:', screenName);
     
+    // Hide all screens
     const screens = ['usernameScreen', 'quizScreen', 'leaderboardScreen'];
     screens.forEach(screenId => {
         const screen = document.getElementById(screenId);
         if (screen) screen.classList.remove('active');
     });
     
+    // Show target screen
     const targetScreen = document.getElementById(screenName + 'Screen');
     if (targetScreen) {
         targetScreen.classList.add('active');
-        console.log("✅ Screen shown:", screenName);
-    } else {
-        console.error("❌ Screen not found:", screenName);
+        console.log('✅ Screen shown:', screenName);
     }
 }
 
 function loadQuestion() {
-    console.log("📝 Loading question:", gameState.currentQuestion + 1);
+    console.log('📝 Loading question:', gameState.currentQuestion + 1);
     
     if (gameState.currentQuestion >= QUIZ_CONFIG.totalQuestions) {
         endQuiz();
@@ -274,10 +314,16 @@ function loadQuestion() {
     const questionText = document.getElementById('questionText');
     const currentQuestion = document.getElementById('currentQuestion');
     const optionsContainer = document.getElementById('optionsContainer');
+    const feedback = document.getElementById('feedback');
     
     if (currentQuestion) currentQuestion.textContent = gameState.currentQuestion + 1;
     if (questionText) questionText.textContent = question.question;
+    if (feedback) {
+        feedback.textContent = '';
+        feedback.className = 'feedback';
+    }
     
+    // Clear and create options
     if (optionsContainer) {
         optionsContainer.innerHTML = '';
         
@@ -285,69 +331,24 @@ function loadQuestion() {
             const button = document.createElement('button');
             button.className = 'option-btn';
             button.textContent = option;
-            button.addEventListener('click', () => selectAnswer(index));
+            button.onclick = function() {
+                selectAnswer(index);
+            };
             optionsContainer.appendChild(button);
         });
     }
     
+    // Start timer
     startTimer();
 }
 
-// SELECT ANSWER FUNCTION
-function selectAnswer(selectedIndex) {
-    const question = QUIZ_QUESTIONS[gameState.currentQuestion];
-    const options = document.querySelectorAll('.option-btn');
-    const feedback = document.getElementById('feedback');
-    const currentScore = document.getElementById('currentScore');
-    
-    options.forEach(btn => btn.disabled = true);
-    options[selectedIndex].classList.add('selected');
-    
-    if (selectedIndex === question.correct) {
-        options[selectedIndex].classList.add('correct');
-        if (feedback) {
-            feedback.textContent = 'Correct! +100 XP 🎉';
-            feedback.className = 'feedback correct';
-        }
-        
-        gameState.score += QUIZ_CONFIG.xpPerQuestion;
-        if (currentScore) currentScore.textContent = gameState.score;
-        
-        if (gameState.players.has(gameState.currentPlayer)) {
-            const player = gameState.players.get(gameState.currentPlayer);
-            player.score += QUIZ_CONFIG.xpPerQuestion;
-            savePlayers();
-        }
-    } else {
-        options[selectedIndex].classList.add('incorrect');
-        options[question.correct].classList.add('correct');
-        if (feedback) {
-            feedback.textContent = 'Wrong! No points.';
-            feedback.className = 'feedback incorrect';
-        }
-    }
-    
-    setTimeout(() => {
-        gameState.currentQuestion++;
-        loadQuestion();
-    }, 2000);
-}
-
-
-// END QUIZ AND LEADERBOARD
-function endQuiz() {
-    console.log("🏁 Quiz ended for:", gameState.currentPlayer);
-    showLeaderboard();
-    showScreen('leaderboard');
-}
-
-function showLeaderboar// TIMER FUNCTIONS - FIXED
-let timer;
+// TIMER - FIXED
+let currentTimer = null;
 
 function startTimer() {
-    // CLEAR ANY EXISTING TIMER FIRST
-    if (timer) {
-        clearInterval(timer);
+    // Clear any existing timer
+    if (currentTimer) {
+        clearInterval(currentTimer);
     }
     
     let timeLeft = QUIZ_CONFIG.timePerQuestion;
@@ -357,13 +358,13 @@ function startTimer() {
     if (timeLeftEl) timeLeftEl.textContent = `${timeLeft}s`;
     if (timerProgress) timerProgress.style.width = '100%';
     
-    timer = setInterval(() => {
+    currentTimer = setInterval(() => {
         timeLeft--;
         if (timeLeftEl) timeLeftEl.textContent = `${timeLeft}s`;
         if (timerProgress) timerProgress.style.width = `${(timeLeft / QUIZ_CONFIG.timePerQuestion) * 100}%`;
         
         if (timeLeft <= 0) {
-            clearInterval(timer);
+            clearInterval(currentTimer);
             handleTimeUp();
         }
     }, 1000);
@@ -374,10 +375,7 @@ function handleTimeUp() {
     const question = QUIZ_QUESTIONS[gameState.currentQuestion];
     const feedback = document.getElementById('feedback');
     
-    // DISABLE BUTTONS
     options.forEach(btn => btn.disabled = true);
-    
-    // SHOW CORRECT ANSWER
     if (options[question.correct]) {
         options[question.correct].classList.add('correct');
     }
@@ -387,18 +385,16 @@ function handleTimeUp() {
         feedback.className = 'feedback incorrect';
     }
     
-    // MOVE TO NEXT QUESTION
     setTimeout(() => {
         gameState.currentQuestion++;
         loadQuestion();
     }, 2000);
 }
 
-// ALSO UPDATE selectAnswer TO CLEAR TIMER
 function selectAnswer(selectedIndex) {
-    // CLEAR TIMER WHEN ANSWER IS SELECTED
-    if (timer) {
-        clearInterval(timer);
+    // Clear timer
+    if (currentTimer) {
+        clearInterval(currentTimer);
     }
     
     const question = QUIZ_QUESTIONS[gameState.currentQuestion];
@@ -437,7 +433,15 @@ function selectAnswer(selectedIndex) {
         gameState.currentQuestion++;
         loadQuestion();
     }, 2000);
-}d() {
+}
+
+function endQuiz() {
+    console.log('🏁 Quiz ended');
+    showLeaderboard();
+    showScreen('leaderboard');
+}
+
+function showLeaderboard() {
     cleanupOldPlayers();
     
     const playersArray = Array.from(gameState.players.values())
@@ -522,14 +526,3 @@ function startResetTimer() {
     updateResetTimer();
     setInterval(updateResetTimer, 1000);
 }
-
-function playAgain() {
-    gameState.score = 0;
-    gameState.currentQuestion = 0;
-    showScreen('username');
-    const usernameInput = document.getElementById('usernameInput');
-    if (usernameInput) {
-        usernameInput.value = '';
-        usernameInput.focus();
-    }
-              }
